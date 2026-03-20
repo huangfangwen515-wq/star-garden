@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的星空笔记 - 动态引力版</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050510">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        body { margin: 0; padding: 0; background-color: #050510; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        #sky { position: relative; width: 100vw; height: 100vh; }
+        .star { position: absolute; border-radius: 50%; cursor: pointer; transform: translate(-50%, -50%); transition: box-shadow 0.5s ease; backface-visibility: hidden; }
+        /* 鼠标悬停或点击时放大 */
+        .star:active { transform: translate(-50%, -50%) scale(1.5); }
+        
+        /* 按钮与弹窗样式保持原样 */
+        #addBtn { position: fixed; bottom: 30px; right: 30px; padding: 15px 25px; background-color: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 30px; cursor: pointer; z-index: 100; backdrop-filter: blur(5px); }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(20, 20, 35, 0.95); padding: 30px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.2); z-index: 1000; width: 80%; max-width: 500px; box-shadow: 0 0 30px rgba(0, 0, 0, 0.8); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 999; }
+        .modal h2 { margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; box-sizing: border-box; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 5px; }
+        .btn-submit { padding: 10px 20px; background: #4CAF50; border: none; color: white; border-radius: 5px; cursor: pointer; }
+        .btn-close { padding: 10px 20px; background: #f44336; border: none; color: white; border-radius: 5px; cursor: pointer; float: right; }
+        #insightList { max-height: 250px; overflow-y: auto; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 15px; margin-top: 15px; }
+        .insight-item { background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="sky"></div>
+    <button id="addBtn">✨ 记录新感悟</button>
+    <div class="modal-overlay" id="overlay"></div>
+
+    <div class="modal" id="addModal">
+        <h2>点亮星空</h2>
+        <div class="form-group">
+            <label>领域 (相同的领域会汇聚成星团)：</label>
+            <input type="text" id="categoryInput" placeholder="心理学、玄学、书法..." list="categories">
+            <datalist id="categories">
+                <option value="心理学"><option value="玄学"><option value="书法"><option value="计算机">
+            </datalist>
+        </div>
+        <div class="form-group">
+            <label>感悟与经历：</label>
+            <textarea id="contentInput" placeholder="此时此刻的想法..."></textarea>
+        </div>
+        <button class="btn-submit" onclick="saveInsight()">保存并点亮</button>
+        <button class="btn-close" onclick="closeModals()">取消</button>
+    </div>
+
+    <div class="modal" id="viewModal">
+        <h2 id="viewCategory">领域</h2>
+        <p>星团强度：<span id="viewBrightness">1</span> 级</p>
+        <div id="insightList"></div>
+        <button class="btn-close" style="margin-top: 15px;" onclick="closeModals()">关闭</button>
+    </div>
+
+    <script>
+        // --- 核心改变：改变数据结构，从“一颗大星星”变成“一个星团” ---
+        // { "心理学": { centroid: {x,y}, stars: [{x,y,content,date}, ...], color } }
+        let universeData = JSON.parse(localStorage.getItem('myStarryUniverse')) || {};
+
+        const domainColors = { '心理学': '#87CEFA', '玄学': '#9370DB', '书法': '#F5F5DC', '计算机': '#00FF7F' };
+        const sky = document.getElementById('sky');
+        const overlay = document.getElementById('overlay');
+        const addModal = document.getElementById('addModal');
+        const viewModal = document.getElementById('viewModal');
+        
+        // 存储实际的 DOM 元素引用，用于物理模拟
+        let starElements = {}; 
+
+        window.onload = () => { initUniverse(); simulationLoop(); };
+
+        document.getElementById('addBtn').addEventListener('click', () => { overlay.style.display = 'block'; addModal.style.display = 'block'; });
+
+        function closeModals() {
+            overlay.style.display = 'none'; addModal.style.display = 'none'; viewModal.style.display = 'none';
+            document.getElementById('categoryInput').value = ''; document.getElementById('contentInput').value = '';
+        }
+
+        // 保存感悟：每次保存都添加一颗新星星到星团中
+        function saveInsight() {
+            const category = document.getElementById('categoryInput').value.trim();
+            const content = document.getElementById('contentInput').value.trim();
+            if (!category || !content) { alert("请填写完整！"); return; }
+
+            // 如果是新领域，创建星团中心
+            if (!universeData[category]) {
+                universeData[category] = {
+                    centroid: { x: window.innerWidth / 2 + (Math.random()-0.5)*200, y: window.innerHeight / 2 + (Math.random()-0.5)*200 },
+                    color: domainColors[category] || '#FFD700',
+                    stars: []
+                };
+            }
+
+            // 在中心附近随机生成星星的初始位置
+            const center = universeData[category].centroid;
+            const newStar = {
+                x: center.x + (Math.random() - 0.5) * 50,
+                y: center.y + (Math.random() - 0.5) * 50,
+                vx: 0, vy: 0, // 初始速度为 0
+                content: content,
+                date: new Date().toLocaleDateString()
+            };
+
+            universeData[category].stars.push(newStar);
+            saveData();
+            createStarElement(category, newStar, universeData[category].stars.length - 1);
+            closeModals();
+        }
+
+        function saveData() { localStorage.setItem('myStarryUniverse', JSON.stringify(universeData)); }
+
+        // 界面初始化：加载所有星星
+        function initUniverse() {
+            sky.innerHTML = '';
+            for (const category in universeData) {
+                starElements[category] = [];
+                universeData[category].stars.forEach((star, index) => {
+                    createStarElement(category, star, index);
+                });
+            }
+        }
+
+        // 创建星星 DOM 元素
+        function createStarElement(category, star, index) {
+            if (!starElements[category]) starElements[category] = [];
+            
+            const el = document.createElement('div');
+            el.className = 'star';
+            el.style.backgroundColor = universeData[category].color;
+            
+            // 基础大小与光晕
+            const size = 3 + Math.random() * 2; 
+            el.style.width = size + 'px'; el.style.height = size + 'px';
+            el.style.boxShadow = `0 0 ${size*2}px ${size/2}px ${universeData[category].color}`;
+
+            // 点击星团中的任何星星，都打开该领域的感悟列表
+            el.addEventListener('click', (e) => {
+                e.stopPropagation(); // 防止触发物理效果
+                openViewModal(category);
+            });
+
+            sky.appendChild(el);
+            starElements[category][index] = el; // 存储引用以便更新位置
+        }
+
+        function openViewModal(category) {
+            const data = universeData[category];
+            document.getElementById('viewCategory').innerText = `【${category}】星团`;
+            document.getElementById('viewBrightness').innerText = data.stars.length;
+            const listDiv = document.getElementById('insightList');
+            listDiv.innerHTML = '';
+            // 倒序排列，最新的在最上面
+            [...data.stars].reverse().forEach(star => {
+                const item = document.createElement('div');
+                item.className = 'insight-item';
+                item.innerHTML = `<small style="color:#aaa;">${star.date}</small><br>${star.content}`;
+                listDiv.appendChild(item);
+            });
+            overlay.style.display = 'block'; viewModal.style.display = 'block';
+        }
+
+        // --- 核心改变：物理模拟循环 (Force-directed layout) ---
+        function simulationLoop() {
+            const friction = 0.96;       // 摩擦力，让物体最终停下来
+            const gravityConstant = 0.005; // 同类星团内部引力
+            const repulsionConstant = 500; // 不同星团中心之间的斥力
+            const clusterRadius = 80;     // 期望的星团半径
+
+            // 1. 计算斥力 (让不同星团中心分开)
+            const categories = Object.keys(universeData);
+            for (let i = 0; i < categories.length; i++) {
+                for (let j = i + 1; j < categories.length; j++) {
+                    const c1 = universeData[categories[i]].centroid;
+                    const c2 = universeData[categories[j]].centroid;
+                    const dx = c2.x - c1.x, dy = c2.y - c1.y;
+                    const distSq = dx*dx + dy*dy + 0.1; // 防止除以 0
+                    const force = repulsionConstant / distSq;
+                    const ax = force * dx / Math.sqrt(distSq);
+                    const ay = force * dy / Math.sqrt(distSq);
+                    // 互相排斥
+                    c1.x -= ax; c1.y -= ay; c2.x += ax; c2.y += ay;
+                }
+            }
+
+            // 2. 计算引力并更新每颗星星的位置
+            for (const category in universeData) {
+                const data = universeData[category];
+                const center = data.centroid;
+
+                // 约束中心点不要超出屏幕太多
+                center.x = Math.max(100, Math.min(window.innerWidth - 100, center.x));
+                center.y = Math.max(100, Math.min(window.innerHeight - 100, center.y));
+
+                data.stars.forEach((star, index) => {
+                    // 引力：向星团中心汇聚
+                    const dx = center.x - star.x;
+                    const dy = center.y - star.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy) + 0.1;
+
+                    // 力的大小与距离成正比（类似弹簧），确保形成紧密的球形
+                    const force = dist * gravityConstant;
+
+                    // 更新速度
+                    star.vx = (star.vx + force * (dx/dist)) * friction;
+                    star.vy = (star.vy + force * (dy/dist)) * friction;
+
+                    // 更新位置
+                    star.x += star.vx; star.y += star.vy;
+
+                    // 更新 DOM 元素位置 (使用 translate3d 获得更好的硬件加速性能)
+                    const el = starElements[category][index];
+                    if (el) {
+                        el.style.transform = `translate3d(${star.x}px, ${star.y}px, 0) translate(-50%, -50%)`;
+                    }
+                });
+            }
+
+            // 持续循环，形成动态效果
+            requestAnimationFrame(simulationLoop);
+        }
+    </script>
+</body>
+</html>
