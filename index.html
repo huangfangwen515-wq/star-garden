@@ -3,21 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我的灵感宇宙 - 3D 进化版</title>
+    <title>我的灵感宇宙 - 终极版</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050510">
     <style>
-        :root { --bg-color: #050510; --accent-blue: #4a90e2; }
+        :root { --bg-color: #050510; --accent-blue: #4a90e2; --danger-red: #ff4d4d; }
         body { margin: 0; padding: 0; background-color: var(--bg-color); color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
         #sky { position: absolute; top:0; left:0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, #0a0a1a 0%, #050510 100%); transition: opacity 0.5s; cursor: grab; }
         #sky:active { cursor: grabbing; }
 
-        /* 底部导航栏 */
-        .nav-bar { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 20px; z-index: 100; pointer-events: none; }
-        .nav-btn { pointer-events: auto; padding: 15px 25px; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 30px; cursor: pointer; backdrop-filter: blur(10px); font-size: 16px; transition: 0.3s; font-family: inherit;}
-        .nav-btn:hover { background: rgba(255, 255, 255, 0.2); }
-
-        /* 时间轴视图 */
+        .nav-bar { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 100; pointer-events: none; padding: 0 10px; box-sizing: border-box;}
+        .nav-btn { pointer-events: auto; padding: 12px 18px; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 25px; cursor: pointer; backdrop-filter: blur(10px); font-size: 14px; transition: 0.3s; font-family: inherit; white-space: nowrap;}
+        
         #timelineView { position: absolute; top:0; left:0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 50; display: none; overflow-y: auto; padding: 40px 20px; box-sizing: border-box; }
         .timeline-container { max-width: 600px; margin: 0 auto; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 20px; }
         .timeline-item { margin-bottom: 30px; position: relative; }
@@ -26,13 +23,15 @@
         .timeline-cat { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.1); margin-bottom: 8px; border: 1px solid var(--dot-color); }
         .timeline-content { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; line-height: 1.5; }
 
-        /* 创建灵感弹窗 */
         .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 10, 20, 0.98); padding: 25px; border-radius: 20px; z-index: 1000; width: 85%; max-width: 400px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 999; backdrop-filter: blur(3px); }
         input, textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px; padding: 12px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit;}
         .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-submit { flex: 2; padding: 12px; background: var(--accent-blue); border: none; color: white; border-radius: 8px; font-weight: bold; }
-        .btn-close { flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 8px; }
+        .btn-submit { flex: 2; padding: 12px; background: var(--accent-blue); border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer;}
+        .btn-close { flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 8px; cursor: pointer;}
+        
+        #insightList { max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
+        .insight-item { background: rgba(255,255,255,0.03); padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 14px; border-left: 3px solid var(--accent-blue); }
     </style>
 </head>
 <body>
@@ -40,127 +39,132 @@
     <div id="sky"></div>
 
     <div id="timelineView">
-        <h2 style="text-align:center; font-weight: 300; letter-spacing: 2px; margin-bottom: 40px;">灵感时间线</h2>
-        <div class="timeline-container" id="timelineContainer">
-            </div>
+        <h2 style="text-align:center; font-weight: 300;">灵感时间线</h2>
+        <div class="timeline-container" id="timelineContainer"></div>
     </div>
 
     <div class="nav-bar">
         <button class="nav-btn" id="toggleBtn" onclick="toggleView()">🧭 时间轴</button>
-        <button class="nav-btn" onclick="openModal('newDomainModal')">✨ 记录新星</button>
+        <button class="nav-btn" onclick="openModal('newDomainModal')">✨ 记录</button>
+        <button class="nav-btn" style="color:var(--danger-red); border-color:rgba(255,77,77,0.3);" onclick="resetUniverse()">💥 重置</button>
     </div>
 
     <div class="modal-overlay" id="overlay" onclick="closeModals()"></div>
 
+    <div class="modal" id="starModal">
+        <h2 id="modalTitle" style="margin-top:0; font-size: 18px;">星系详情</h2>
+        <div id="insightList"></div>
+        <textarea id="appendContent" placeholder="追加灵感..."></textarea>
+        <div class="btn-group">
+            <button class="btn-submit" onclick="submitAppend()">融入</button>
+            <button class="btn-close" onclick="closeModals()">关闭</button>
+        </div>
+    </div>
+
     <div class="modal" id="newDomainModal">
-        <h2 style="margin-top:0;">开启新星系</h2>
-        <input type="text" id="newCategory" placeholder="领域名称 (如：心理学)">
-        <textarea id="newContent" placeholder="记录第一道灵感光芒..."></textarea>
+        <h2 style="margin-top:0;">新星系</h2>
+        <input type="text" id="newCategory" placeholder="领域 (如：读书、心情)">
+        <textarea id="newContent" placeholder="记录内容..."></textarea>
         <div class="btn-group">
             <button class="btn-submit" onclick="submitNewDomain()">开启</button>
             <button class="btn-close" onclick="closeModals()">取消</button>
         </div>
     </div>
 
-    <script src="./sw.js"></script>
-
     <script type="module">
         import { init3DScene, runSimulationLoop } from './scene_3d.js';
 
         let universeData = {};
-        let isSimulating = false;
         let isTimelineMode = false;
+        let currentViewingCat = "";
+
+        // 核心更新检测：如果有新 sw.js，强制刷新
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').then(reg => {
+                reg.onupdatefound = () => {
+                    const worker = reg.installing;
+                    worker.onstatechange = () => {
+                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                            if(confirm("发现新版本，是否刷新？")) location.reload();
+                        }
+                    };
+                };
+            });
+        }
 
         window.onload = () => {
             const saved = localStorage.getItem('myStarryUniverse');
-            if (saved) {
-                try {
-                    universeData = JSON.parse(saved);
-                } catch(e) {
-                    console.error("数据损坏，已重置");
-                    universeData = {};
-                }
-            }
-            
-            // 初始化新的立体空间场景
-            init3DScene(universeData);
-            
-            // 启动 Three.js 主循环
-            runSimulationLoop(); 
+            if (saved) universeData = JSON.parse(saved);
+            init3DScene(universeData, onStarClick);
+            runSimulationLoop();
         };
 
-        // --- 以下 UI 操作保持一致 ---
+        // 3D 射线检测回调函数：点击星星打开详情
+        function onStarClick(catName) {
+            currentViewingCat = catName;
+            document.getElementById('modalTitle').innerText = `✨ ${catName}`;
+            const list = document.getElementById('insightList');
+            list.innerHTML = '';
+            universeData[catName].stars.slice().reverse().forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'insight-item';
+                item.innerHTML = `<small style="color:#666">${s.date}</small><div>${s.content}</div>`;
+                list.appendChild(item);
+            });
+            openModal('starModal');
+        }
+
         window.toggleView = function() {
             isTimelineMode = !isTimelineMode;
-            const sky = document.getElementById('sky');
-            const timeline = document.getElementById('timelineView');
-            const btn = document.getElementById('toggleBtn');
-
+            const sky = document.getElementById('sky'), timeline = document.getElementById('timelineView'), btn = document.getElementById('toggleBtn');
             if(isTimelineMode) {
-                closeModals();
-                sky.style.opacity = '0';
-                setTimeout(() => sky.style.display = 'none', 500);
-                timeline.style.display = 'block';
-                btn.innerText = '🌌 观星模式';
-                renderTimeline();
+                sky.style.display = 'none'; timeline.style.display = 'block'; btn.innerText = '🌌 观星'; renderTimeline();
             } else {
-                sky.style.display = 'block';
-                setTimeout(() => sky.style.opacity = '1', 10);
-                timeline.style.display = 'none';
-                btn.innerText = '🧭 时间轴';
+                sky.style.display = 'block'; timeline.style.display = 'none'; btn.innerText = '🧭 时间轴';
             }
         }
 
         window.renderTimeline = function() {
             const container = document.getElementById('timelineContainer');
             container.innerHTML = '';
-            let allStars = [];
-            for(const cat in universeData) {
-                universeData[cat].stars.forEach(s => {
-                    allStars.push({...s, category: cat, color: universeData[cat].color});
-                });
-            }
-            allStars.sort((a, b) => b.id - a.id);
-            if(allStars.length === 0) { container.innerHTML = '<p style="color:#666; text-align:center;">宇宙空空如也。</p>'; return; }
-            allStars.forEach(s => {
+            let all = [];
+            for(let cat in universeData) universeData[cat].stars.forEach(s => all.push({...s, cat, color: universeData[cat].color}));
+            all.sort((a,b) => b.id - a.id);
+            all.forEach(s => {
                 const item = document.createElement('div');
-                item.className = 'timeline-item';
-                item.style.setProperty('--dot-color', s.color);
-                item.innerHTML = `<div class="timeline-date">${s.date}</div><div class="timeline-cat" style="color:${s.color}">${s.category}</div><div class="timeline-content">${s.content}</div>`;
+                item.className = 'timeline-item'; item.style.setProperty('--dot-color', s.color);
+                item.innerHTML = `<div class="timeline-date">${s.date}</div><div class="timeline-cat" style="color:${s.color}">${s.cat}</div><div class="timeline-content">${s.content}</div>`;
                 container.appendChild(item);
             });
         }
 
-        window.openModal = function(id) {
-            document.getElementById('overlay').style.display = 'block';
-            document.getElementById(id).style.display = 'block';
+        window.resetUniverse = function() {
+            if(confirm("确定清空所有灵感吗？")) { localStorage.removeItem('myStarryUniverse'); location.reload(); }
         }
 
-        window.closeModals = function() {
-            document.getElementById('overlay').style.display = 'none';
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-        }
+        window.openModal = (id) => { document.getElementById('overlay').style.display = 'block'; document.getElementById(id).style.display = 'block'; };
+        window.closeModals = () => { document.getElementById('overlay').style.display = 'none'; document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); };
 
         window.submitNewDomain = function() {
-            const cat = document.getElementById('newCategory').value.trim();
-            const con = document.getElementById('newContent').value.trim();
-            if(!cat || !con) return alert("请填写领域和内容");
-            
-            if(!universeData[cat]) {
-                universeData[cat] = { centroid: {x: window.innerWidth/2, y: window.innerHeight/2}, color: `hsl(${Math.random()*360},70%,75%)`, stars: [] };
-            }
-            
-            const s = { vx: 0, vy: 0, content: con, date: new Date().toLocaleString(), id: Date.now() };
-            universeData[cat].stars.push(s);
-            localStorage.setItem('myStarryUniverse', JSON.stringify(universeData));
-            
-            document.getElementById('newCategory').value = '';
-            document.getElementById('newContent').value = '';
+            const cat = document.getElementById('newCategory').value.trim(), con = document.getElementById('newContent').value.trim();
+            if(!cat || !con) return;
+            if(!universeData[cat]) universeData[cat] = { color: `hsl(${Math.random()*360},70%,75%)`, stars: [] };
+            save(cat, con);
             closeModals();
-            
-            // 重新初始化 3D 场景以更新星星
-            init3DScene(universeData);
-            if(isTimelineMode) renderTimeline();
+        }
+
+        window.submitAppend = function() {
+            const con = document.getElementById('appendContent').value.trim();
+            if(!con) return;
+            save(currentViewingCat, con);
+            onStarClick(currentViewingCat);
+            document.getElementById('appendContent').value = '';
+        }
+
+        function save(cat, con) {
+            universeData[cat].stars.push({ content: con, date: new Date().toLocaleString(), id: Date.now() });
+            localStorage.setItem('myStarryUniverse', JSON.stringify(universeData));
+            init3DScene(universeData, onStarClick);
         }
     </script>
 </body>
