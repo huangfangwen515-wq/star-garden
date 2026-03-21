@@ -3,60 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>稳定版终极宇宙</title>
+<title>思维宇宙 Pro</title>
 
 <style>
-:root { --bg-color: #050510; --accent-blue: #4a90e2; }
-
 body {
-    margin: 0;
-    background: var(--bg-color);
-    color: white;
-    font-family: sans-serif;
-    overflow: hidden;
+    margin:0;
+    background:#050510;
+    color:white;
+    font-family:sans-serif;
+    overflow:hidden;
 }
 
 #sky {
-    width: 100vw;
-    height: 100vh;
-    position: relative;
-    background: radial-gradient(circle at center, #0a0a1a, #050510);
-}
-
-@keyframes breathe {
-    0%,100% { opacity: 0.4; transform: scale(0.9); }
-    50% { opacity: 1; transform: scale(1.1); }
+    width:100vw;
+    height:100vh;
+    position:relative;
 }
 
 .star {
-    position: absolute;
-    border-radius: 50%;
-    animation: breathe var(--speed) infinite ease-in-out;
-    cursor: pointer;
+    position:absolute;
+    border-radius:50%;
+    animation:breathe 3s infinite;
+    cursor:pointer;
 }
 
-#addBtn {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    padding: 15px 25px;
-    border-radius: 30px;
-    border: none;
-    background: rgba(255,255,255,0.1);
-    color: white;
+@keyframes breathe {
+    0%,100% {opacity:0.5; transform:scale(0.9);}
+    50% {opacity:1; transform:scale(1.1);}
 }
 
-.modal {
-    display:none;
+#panel {
     position:fixed;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    background:#111;
-    padding:20px;
-    border-radius:10px;
-    width:300px;
+    top:10px;
+    left:10px;
     z-index:10;
+}
+
+input,textarea {
+    background:#111;
+    color:white;
+    border:1px solid #333;
+    padding:8px;
+    border-radius:6px;
+}
+
+button {
+    margin-top:5px;
 }
 </style>
 </head>
@@ -64,119 +56,117 @@ body {
 <body>
 
 <div id="sky"></div>
-<button id="addBtn">✨ 记录</button>
 
-<div class="modal" id="modal">
-<input id="cat" placeholder="分类"><br><br>
-<textarea id="content" placeholder="写点什么"></textarea><br><br>
-<button onclick="submit()">保存</button>
-<button onclick="closeModal()">关闭</button>
+<div id="panel">
+<input id="cat" placeholder="分类"><br>
+<textarea id="content" placeholder="记录"></textarea><br>
+<button onclick="add()">添加</button>
+<br><br>
+<input id="search" placeholder="搜索..." oninput="search()">
+<div id="results"></div>
 </div>
 
 <script>
-let universeData = {};
-let starElements = {};
-let isSimulating = false;
+let data = JSON.parse(localStorage.getItem('universe')||'{}');
+let els = {};
+let running = true;
 
-window.onload = () => {
-    const saved = localStorage.getItem('universe');
-    if(saved) universeData = JSON.parse(saved);
-
-    initUniverse();
-
-    setTimeout(()=>{
-        isSimulating = true;
-        simulationLoop();
-    },300);
-};
-
-function initUniverse(){
-    for(const cat in universeData){
-        starElements[cat] = [];
-
-        universeData[cat].stars.forEach((s,i)=>{
-            const el = createStar(cat,s,i);
-            starElements[cat].push(el);
-        });
-    }
+function save(){
+    localStorage.setItem('universe',JSON.stringify(data));
 }
 
 function createStar(cat,s,i){
-    const el = document.createElement('div');
+    const el=document.createElement('div');
     el.className='star';
 
-    const size = 6 + Math.log(s.content.length+1)*2;
+    const size=6+Math.log(s.content.length+1)*2;
 
     Object.assign(el.style,{
         width:size+'px',
         height:size+'px',
         left:s.x+'px',
         top:s.y+'px',
-        background:universeData[cat].color,
-        boxShadow:`0 0 ${size*3}px ${universeData[cat].color}`
+        background:data[cat].color,
+        boxShadow:`0 0 ${size*3}px ${data[cat].color}`
     });
 
-    el.style.setProperty('--speed',2+Math.random()*2+'s');
-
-    el.onclick = (e)=>{
-        e.stopPropagation();
-        alert(s.content);
+    el.onclick=()=>{
+        if(confirm(s.content+"\n\n删除？")){
+            deleteStar(cat,i);
+        }
     };
 
-    document.getElementById('sky').appendChild(el);
-
+    sky.appendChild(el);
     return el;
 }
 
-function submit(){
-    const cat = document.getElementById('cat').value.trim();
-    const con = document.getElementById('content').value.trim();
-    if(!cat || !con) return;
+function init(){
+    for(const cat in data){
+        els[cat]=[];
+        data[cat].stars.forEach((s,i)=>{
+            els[cat].push(createStar(cat,s,i));
+        });
+    }
+}
 
-    if(!universeData[cat]){
-        universeData[cat]={
+function add(){
+    const catVal=cat.value.trim();
+    const con=content.value.trim();
+    if(!catVal||!con) return;
+
+    if(!data[catVal]){
+        data[catVal]={
             centroid:{
-                x:Math.random()*window.innerWidth,
-                y:Math.random()*window.innerHeight
+                x:Math.random()*innerWidth,
+                y:Math.random()*innerHeight
             },
-            color:`hsl(${Math.random()*360},70%,75%)`,
+            color:`hsl(${Math.random()*360},70%,70%)`,
             stars:[]
         };
     }
 
-    const spread = 40;
+    const d=data[catVal];
 
     const s={
-        x:universeData[cat].centroid.x+(Math.random()-0.5)*spread,
-        y:universeData[cat].centroid.y+(Math.random()-0.5)*spread,
+        x:d.centroid.x+(Math.random()-0.5)*40,
+        y:d.centroid.y+(Math.random()-0.5)*40,
         vx:(Math.random()-0.5)*1.5,
         vy:(Math.random()-0.5)*1.5,
-        content:con
+        content:con,
+        time:Date.now()
     };
 
-    universeData[cat].stars.push(s);
+    d.stars.push(s);
 
-    const el = createStar(cat,s);
-    if(!starElements[cat]) starElements[cat]=[];
-    starElements[cat].push(el);
+    if(!els[catVal]) els[catVal]=[];
+    els[catVal].push(createStar(catVal,s,d.stars.length-1));
 
-    localStorage.setItem('universe',JSON.stringify(universeData));
-
-    closeModal();
+    save();
 }
 
-function simulationLoop(){
-    if(!isSimulating) return;
+function deleteStar(cat,i){
+    data[cat].stars.splice(i,1);
+    els[cat][i].remove();
+    els[cat].splice(i,1);
+
+    if(data[cat].stars.length===0){
+        delete data[cat];
+        delete els[cat];
+    }
+
+    save();
+}
+
+function loop(){
+    if(!running) return;
 
     const friction=0.97;
     const gravity=0.0015;
-    const maxSpeed=2.5;
 
-    for(const cat in universeData){
-        const d=universeData[cat];
+    for(const cat in data){
+        const d=data[cat];
 
         d.stars.forEach((s,i)=>{
-
             const dx=d.centroid.x-s.x;
             const dy=d.centroid.y-s.y;
 
@@ -186,23 +176,18 @@ function simulationLoop(){
             s.vx*=friction;
             s.vy*=friction;
 
-            s.vx=Math.max(-maxSpeed,Math.min(maxSpeed,s.vx));
-            s.vy=Math.max(-maxSpeed,Math.min(maxSpeed,s.vy));
-
             s.x+=s.vx;
             s.y+=s.vy;
 
-            if(s.x<0||s.x>window.innerWidth){
+            if(s.x<0||s.x>innerWidth){
                 s.vx*=-0.7;
-                s.x=Math.max(0,Math.min(window.innerWidth,s.x));
             }
 
-            if(s.y<0||s.y>window.innerHeight){
+            if(s.y<0||s.y>innerHeight){
                 s.vy*=-0.7;
-                s.y=Math.max(0,Math.min(window.innerHeight,s.y));
             }
 
-            const el=starElements[cat][i];
+            const el=els[cat][i];
             if(el){
                 el.style.left=s.x+'px';
                 el.style.top=s.y+'px';
@@ -210,16 +195,34 @@ function simulationLoop(){
         });
     }
 
-    requestAnimationFrame(simulationLoop);
+    requestAnimationFrame(loop);
 }
 
-document.getElementById('addBtn').onclick=()=>{
-    document.getElementById('modal').style.display='block';
-};
+function search(){
+    const q=search.value.toLowerCase();
+    results.innerHTML='';
 
-function closeModal(){
-    document.getElementById('modal').style.display='none';
+    let all=[];
+
+    for(const cat in data){
+        data[cat].stars.forEach(s=>{
+            if(s.content.toLowerCase().includes(q)){
+                all.push({...s,cat});
+            }
+        });
+    }
+
+    all.sort((a,b)=>b.time-a.time);
+
+    all.slice(0,20).forEach(s=>{
+        const div=document.createElement('div');
+        div.innerText = `[${s.cat}] ` + s.content;
+        results.appendChild(div);
+    });
 }
+
+init();
+loop();
 </script>
 
 </body>
