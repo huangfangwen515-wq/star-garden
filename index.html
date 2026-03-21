@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我的灵感宇宙 - 高阶版</title>
+    <title>我的灵感宇宙 - 高阶版 (体验修正)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050510">
     <style>
-        :root { --bg-color: #050510; --accent-blue: #4a90e2; }
+        :root { --bg-color: #050510; --accent-blue: #4a90e2; --danger-red: #ff4d4d; }
         body { margin: 0; padding: 0; background-color: var(--bg-color); color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
         #sky { position: absolute; top:0; left:0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, #0a0a1a 0%, #050510 100%); transition: opacity 0.5s; }
         
@@ -15,14 +15,14 @@
             0%, 100% { opacity: 0.3; transform: scale(0.8); }
             50% { opacity: 1; transform: scale(1.1); }
         }
-        .star { position: absolute; border-radius: 50%; cursor: pointer; z-index: 10; animation: breathe var(--speed) infinite ease-in-out; animation-delay: var(--delay); }
+        .star { position: absolute; border-radius: 50%; cursor: pointer; z-index: 10; animation: breathe var(--speed) infinite ease-in-out; animation-delay: var(--delay); will-change: left, top; }
 
         /* 底部导航栏 */
         .nav-bar { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 20px; z-index: 100; pointer-events: none; }
-        .nav-btn { pointer-events: auto; padding: 15px 25px; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 30px; cursor: pointer; backdrop-filter: blur(10px); font-size: 16px; transition: 0.3s; }
+        .nav-btn { pointer-events: auto; padding: 15px 25px; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 30px; cursor: pointer; backdrop-filter: blur(10px); font-size: 16px; transition: 0.3s; font-family: inherit;}
         .nav-btn:hover { background: rgba(255, 255, 255, 0.2); }
 
-        /* 时间轴视图 (默认隐藏) */
+        /* 时间轴视图 */
         #timelineView { position: absolute; top:0; left:0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 50; display: none; overflow-y: auto; padding: 40px 20px; box-sizing: border-box; }
         .timeline-container { max-width: 600px; margin: 0 auto; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 20px; }
         .timeline-item { margin-bottom: 30px; position: relative; }
@@ -31,13 +31,27 @@
         .timeline-cat { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.1); margin-bottom: 8px; border: 1px solid var(--dot-color); }
         .timeline-content { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; line-height: 1.5; }
 
-        /* 弹窗样式 */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 10, 20, 0.98); padding: 25px; border-radius: 20px; z-index: 1000; width: 85%; max-width: 400px; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 999; }
-        input, textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px; padding: 12px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit;}
+        /* 弹窗样式修正 */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 10, 20, 0.98); padding: 25px; border-radius: 20px; z-index: 1000; width: 85%; max-width: 420px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.9);}
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 999; backdrop-filter: blur(5px);}
+        h2 { margin-top: 0; font-weight: 300; letter-spacing: 2px; }
+        input, textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 10px; padding: 14px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; font-size: 14px;}
+        textarea { height: 80px; resize: none; }
         .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn-submit { flex: 2; padding: 12px; background: var(--accent-blue); border: none; color: white; border-radius: 8px; font-weight: bold; }
-        .btn-close { flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 8px; }
+        .btn-submit { flex: 2; padding: 14px; background: var(--accent-blue); border: none; color: white; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .btn-close { flex: 1; padding: 14px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 10px; cursor: pointer;}
+        
+        /* 详情列表相关样式找回 */
+        #insightList { max-height: 250px; overflow-y: auto; margin: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-right: 5px;}
+        #insightList::-webkit-scrollbar { width: 4px; }
+        #insightList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        .insight-item { background: rgba(255,255,255,0.03); padding: 12px; margin-bottom: 10px; border-radius: 8px; font-size: 14px; line-height: 1.5; border-left: 3px solid var(--accent-blue); position: relative; }
+        .insight-date { font-size: 11px; color: #555; margin-bottom: 5px; }
+        .item-tools { position: absolute; right: 10px; top: 10px; display: flex; gap: 10px; }
+        .tool-icon { cursor: pointer; font-size: 12px; opacity: 0.5; }
+        .delete-icon:hover { color: var(--danger-red); opacity: 1; }
+        .edit-area { width: 100%; background: transparent; border: none; color: #ddd; font-size: 14px; line-height: 1.5; resize: none; outline: none; padding: 0; }
+        .edit-area:focus { background: rgba(255,255,255,0.05); color: #fff; border-radius: 4px; padding: 2px; margin: -2px;}
     </style>
 </head>
 <body>
@@ -45,24 +59,36 @@
     <div id="sky"></div>
 
     <div id="timelineView">
-        <h2 style="text-align:center; font-weight: 300; letter-spacing: 2px; margin-bottom: 40px;">人生回放</h2>
+        <h2 style="text-align:center; font-weight: 300; letter-spacing: 2px; margin-bottom: 40px;">灵感时间线</h2>
         <div class="timeline-container" id="timelineContainer">
             </div>
     </div>
 
     <div class="nav-bar">
         <button class="nav-btn" id="toggleBtn" onclick="toggleView()">🧭 时间轴</button>
-        <button class="nav-btn" onclick="openModal('newDomainModal')">✨ 记录感悟</button>
+        <button class="nav-btn" onclick="openModal('newDomainModal')">✨ 记录新星</button>
     </div>
 
     <div class="modal-overlay" id="overlay" onclick="closeModals()"></div>
 
+    <div class="modal" id="starModal">
+        <h2 id="modalTitle" style="margin-top:0;">星系探索</h2>
+        <div id="insightList"></div>
+        <div class="append-section">
+            <textarea id="appendContent" placeholder="在此追加新的灵感..."></textarea>
+            <div class="btn-group">
+                <button class="btn-submit" onclick="submitAppend()">融入星辰</button>
+                <button class="btn-close" onclick="closeModals()">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal" id="newDomainModal">
-        <h2 style="margin-top:0; font-weight: 400;">开启或追加星系</h2>
-        <input type="text" id="newCategory" placeholder="领域 (如存在则自动追加)">
-        <textarea id="newContent" placeholder="记录灵感光芒..." style="height: 100px;"></textarea>
+        <h2 style="margin-top:0;">开启新星系</h2>
+        <input type="text" id="newCategory" placeholder="领域名称 (如：心理学)">
+        <textarea id="newContent" placeholder="记录第一道灵感光芒..."></textarea>
         <div class="btn-group">
-            <button class="btn-submit" onclick="submitData()">记录</button>
+            <button class="btn-submit" onclick="submitNewDomain()">开启</button>
             <button class="btn-close" onclick="closeModals()">取消</button>
         </div>
     </div>
@@ -81,14 +107,24 @@
         let starElements = {};
         let isSimulating = false;
         let isTimelineMode = false;
+        let currentViewingCategory = "";
 
+        // 稳定性修正的数据载入
         window.onload = () => {
             const saved = localStorage.getItem('myStarryUniverse');
-            if (saved) universeData = JSON.parse(saved);
+            if (saved) {
+                try {
+                    universeData = JSON.parse(saved);
+                } catch(e) {
+                    console.error("数据损坏，已重置");
+                    universeData = {};
+                }
+            }
             initUniverse();
             setTimeout(() => { isSimulating = true; simulationLoop(); }, 500); 
         };
 
+        // 绘图修正：找回 el.onclick 事件
         function initUniverse() {
             const sky = document.getElementById('sky');
             sky.innerHTML = '';
@@ -98,16 +134,24 @@
                 universeData[cat].stars.forEach((s, i) => {
                     const el = document.createElement('div');
                     el.className = 'star';
-                    const size = 5 + Math.min(s.content.length / 5, 10);
+                    const textPower = Math.min(s.content.length, 100);
+                    const size = 5 + (textPower / 10);
                     Object.assign(el.style, {
                         width: size + 'px', height: size + 'px',
                         backgroundColor: universeData[cat].color,
-                        boxShadow: `0 0 ${size*3}px ${universeData[cat].color}`,
+                        boxShadow: `0 0 ${size*4}px ${size/2}px ${universeData[cat].color}`,
                         left: (s.x || window.innerWidth/2) + 'px',
                         top: (s.y || window.innerHeight/2) + 'px'
                     });
                     el.style.setProperty('--speed', (2 + Math.random()*2) + 's');
                     el.style.setProperty('--delay', Math.random() + 's');
+                    
+                    // 核心修复：找回 el.onclick
+                    el.onclick = (e) => { 
+                        e.stopPropagation(); 
+                        if(!isTimelineMode) openStarModal(cat); 
+                    };
+                    
                     sky.appendChild(el);
                     starElements[cat][i] = el;
                 });
@@ -119,8 +163,10 @@
             const sky = document.getElementById('sky');
             const timeline = document.getElementById('timelineView');
             const btn = document.getElementById('toggleBtn');
+            const overlay = document.getElementById('overlay');
 
             if(isTimelineMode) {
+                closeModals(); // 切换模式时先关闭所有弹窗
                 sky.style.opacity = '0';
                 setTimeout(() => sky.style.display = 'none', 500);
                 timeline.style.display = 'block';
@@ -132,6 +178,32 @@
                 timeline.style.display = 'none';
                 btn.innerText = '🧭 时间轴';
             }
+        }
+
+        // 弹窗控制逻辑找回
+        function openStarModal(cat) {
+            currentViewingCategory = cat;
+            const data = universeData[cat];
+            document.getElementById('modalTitle').innerText = `✨ ${cat}星系`;
+            const listDiv = document.getElementById('insightList');
+            listDiv.innerHTML = '';
+            
+            // 倒序排列显示已有星星的细节，允许编辑
+            data.stars.slice().reverse().forEach((s) => {
+                const item = document.createElement('div');
+                item.className = 'insight-item';
+                item.innerHTML = `
+                    <div class="insight-date">${s.date}</div>
+                    <div class="item-tools">
+                        <span class="tool-icon delete-icon" onclick="deleteEntry('${cat}', ${s.id})">✕湮灭</span>
+                    </div>
+                    <textarea class="edit-area" onchange="updateEntry('${cat}', ${s.id}, this.value)">${s.content}</textarea>
+                `;
+                listDiv.appendChild(item);
+            });
+
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('starModal').style.display = 'block';
         }
 
         function renderTimeline() {
@@ -150,7 +222,7 @@
             allStars.sort((a, b) => b.id - a.id);
 
             if(allStars.length === 0) {
-                container.innerHTML = '<p style="color:#666; text-align:center;">宇宙空空如也，快去记录第一条感悟吧。</p>';
+                container.innerHTML = '<p style="color:#666; text-align:center; padding-top: 50px;">宇宙空空如也。</p>';
                 return;
             }
 
@@ -175,31 +247,67 @@
         function closeModals() {
             document.getElementById('overlay').style.display = 'none';
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-        }
-
-        function submitData() {
-            const cat = document.getElementById('newCategory').value.trim();
-            const con = document.getElementById('newContent').value.trim();
-            if(!cat || !con) return alert("请填写领域和内容");
-            
-            if(!universeData[cat]) {
-                universeData[cat] = { centroid: {x: window.innerWidth/2, y: window.innerHeight/2}, color: `hsl(${Math.random()*360},70%,75%)`, stars: [] };
-            }
-            
-            const s = { 
-                x: universeData[cat].centroid.x, y: universeData[cat].centroid.y, 
-                vx: 0, vy: 0, content: con, date: new Date().toLocaleString('zh-CN', {hour12:false}), id: Date.now() 
-            };
-            universeData[cat].stars.push(s);
-            localStorage.setItem('myStarryUniverse', JSON.stringify(universeData));
-            
+            // 清空输入框
             document.getElementById('newCategory').value = '';
             document.getElementById('newContent').value = '';
+            document.getElementById('appendContent').value = '';
+        }
+
+        function submitNewDomain() {
+            const cat = document.getElementById('newCategory').value.trim();
+            const con = document.getElementById('newContent').value.trim();
+            if(!cat || !con) return alert("请填写完整");
+            addEntry(cat, con);
             closeModals();
+        }
+
+        function submitAppend() {
+            const con = document.getElementById('appendContent').value.trim();
+            if(!con) return;
+            addEntry(currentViewingCategory, con);
+            openStarModal(currentViewingCategory); // 刷新
+            document.getElementById('appendContent').value = '';
+        }
+
+        // 核心添加逻辑
+        function addEntry(category, content) {
+            if (!universeData[category]) {
+                universeData[category] = { centroid: {x: window.innerWidth/2, y: window.innerHeight/2}, color: `hsl(${Math.random()*360},70%,75%)`, stars: [] };
+            }
+            const s = { 
+                x: universeData[category].centroid.x, y: universeData[category].centroid.y, 
+                vx: 0, vy: 0, content: content, date: new Date().toLocaleString('zh-CN', {hour12:false}), id: Date.now() 
+            };
+            universeData[category].stars.push(s);
+            localStorage.setItem('myStarryUniverse', JSON.stringify(universeData));
             initUniverse();
             if(isTimelineMode) renderTimeline();
         }
 
+        // 编辑逻辑找回
+        function updateEntry(cat, starId, newVal) {
+            const s = universeData[cat].stars.find(s => s.id === starId);
+            if(s) {
+                s.content = newVal;
+                s.date = new Date().toLocaleString() + " (修订)";
+                localStorage.setItem('myStarryUniverse', JSON.stringify(universeData));
+                initUniverse(); // 重新同步 DOM
+            }
+        }
+
+        // 删除逻辑找回
+        function deleteEntry(cat, starId) {
+            if(!confirm("确定要让这颗星星湮灭吗？数据将不可恢复")) return;
+            universeData[cat].stars = universeData[cat].stars.filter(s => s.id !== starId);
+            if(universeData[cat].stars.length === 0) delete universeData[cat];
+            localStorage.setItem('myStarryUniverse', JSON.stringify(universeData));
+            
+            if(!universeData[cat]) closeModals(); else openStarModal(cat);
+            initUniverse();
+            if(isTimelineMode) renderTimeline();
+        }
+
+        // 防弹稳定版物理模拟
         function simulationLoop() {
             if(!isSimulating || isTimelineMode) return requestAnimationFrame(simulationLoop);
             const friction = 0.94, gravity = 0.004, maxSpeed = 3;
@@ -214,8 +322,10 @@
                     s.vx = Math.max(-maxSpeed, Math.min(maxSpeed, s.vx));
                     s.vy = Math.max(-maxSpeed, Math.min(maxSpeed, s.vy));
                     s.x += s.vx; s.y += s.vy;
-                    if (s.x < 0 || s.x > window.innerWidth) { s.x = d.centroid.x; s.vx = 0; }
-                    if (s.y < 0 || s.y > window.innerHeight) { s.y = d.centroid.y; s.vy = 0; }
+                    
+                    // 边界保护
+                    if (isNaN(s.x) || s.x < 0 || s.x > window.innerWidth) { s.x = d.centroid.x; s.vx = 0; }
+                    if (isNaN(s.y) || s.y < 0 || s.y > window.innerHeight) { s.y = d.centroid.y; s.vy = 0; }
 
                     const el = starElements[cat] ? starElements[cat][i] : null;
                     if(el) { el.style.left = s.x + 'px'; el.style.top = s.y + 'px'; }
