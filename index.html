@@ -1,229 +1,228 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>思维宇宙 Pro</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>我的灵感宇宙 - 高阶版</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050510">
+    <style>
+        :root { --bg-color: #050510; --accent-blue: #4a90e2; }
+        body { margin: 0; padding: 0; background-color: var(--bg-color); color: #fff; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        #sky { position: absolute; top:0; left:0; width: 100vw; height: 100vh; background: radial-gradient(circle at center, #0a0a1a 0%, #050510 100%); transition: opacity 0.5s; }
+        
+        @keyframes breathe {
+            0%, 100% { opacity: 0.3; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+        .star { position: absolute; border-radius: 50%; cursor: pointer; z-index: 10; animation: breathe var(--speed) infinite ease-in-out; animation-delay: var(--delay); }
 
-<style>
-body {
-    margin:0;
-    background:#050510;
-    color:white;
-    font-family:sans-serif;
-    overflow:hidden;
-}
+        /* 底部导航栏 */
+        .nav-bar { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: center; gap: 20px; z-index: 100; pointer-events: none; }
+        .nav-btn { pointer-events: auto; padding: 15px 25px; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 30px; cursor: pointer; backdrop-filter: blur(10px); font-size: 16px; transition: 0.3s; }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.2); }
 
-#sky {
-    width:100vw;
-    height:100vh;
-    position:relative;
-}
+        /* 时间轴视图 (默认隐藏) */
+        #timelineView { position: absolute; top:0; left:0; width: 100vw; height: 100vh; background: var(--bg-color); z-index: 50; display: none; overflow-y: auto; padding: 40px 20px; box-sizing: border-box; }
+        .timeline-container { max-width: 600px; margin: 0 auto; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 20px; }
+        .timeline-item { margin-bottom: 30px; position: relative; }
+        .timeline-item::before { content: ''; position: absolute; left: -26px; top: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--dot-color); box-shadow: 0 0 10px var(--dot-color); }
+        .timeline-date { font-size: 12px; color: #888; margin-bottom: 5px; }
+        .timeline-cat { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.1); margin-bottom: 8px; border: 1px solid var(--dot-color); }
+        .timeline-content { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; line-height: 1.5; }
 
-.star {
-    position:absolute;
-    border-radius:50%;
-    animation:breathe 3s infinite;
-    cursor:pointer;
-}
-
-@keyframes breathe {
-    0%,100% {opacity:0.5; transform:scale(0.9);}
-    50% {opacity:1; transform:scale(1.1);}
-}
-
-#panel {
-    position:fixed;
-    top:10px;
-    left:10px;
-    z-index:10;
-}
-
-input,textarea {
-    background:#111;
-    color:white;
-    border:1px solid #333;
-    padding:8px;
-    border-radius:6px;
-}
-
-button {
-    margin-top:5px;
-}
-</style>
+        /* 弹窗样式 */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(10, 10, 20, 0.98); padding: 25px; border-radius: 20px; z-index: 1000; width: 85%; max-width: 400px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 999; }
+        input, textarea { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px; padding: 12px; box-sizing: border-box; margin-bottom: 10px; font-family: inherit;}
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-submit { flex: 2; padding: 12px; background: var(--accent-blue); border: none; color: white; border-radius: 8px; font-weight: bold; }
+        .btn-close { flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 8px; }
+    </style>
 </head>
-
 <body>
 
-<div id="sky"></div>
+    <div id="sky"></div>
 
-<div id="panel">
-<input id="cat" placeholder="分类"><br>
-<textarea id="content" placeholder="记录"></textarea><br>
-<button onclick="add()">添加</button>
-<br><br>
-<input id="search" placeholder="搜索..." oninput="search()">
-<div id="results"></div>
-</div>
+    <div id="timelineView">
+        <h2 style="text-align:center; font-weight: 300; letter-spacing: 2px; margin-bottom: 40px;">人生回放</h2>
+        <div class="timeline-container" id="timelineContainer">
+            </div>
+    </div>
 
-<script>
-let data = JSON.parse(localStorage.getItem('universe')||'{}');
-let els = {};
-let running = true;
+    <div class="nav-bar">
+        <button class="nav-btn" id="toggleBtn" onclick="toggleView()">🧭 时间轴</button>
+        <button class="nav-btn" onclick="openModal('newDomainModal')">✨ 记录感悟</button>
+    </div>
 
-function save(){
-    localStorage.setItem('universe',JSON.stringify(data));
-}
+    <div class="modal-overlay" id="overlay" onclick="closeModals()"></div>
 
-function createStar(cat,s,i){
-    const el=document.createElement('div');
-    el.className='star';
+    <div class="modal" id="newDomainModal">
+        <h2 style="margin-top:0; font-weight: 400;">开启或追加星系</h2>
+        <input type="text" id="newCategory" placeholder="领域 (如存在则自动追加)">
+        <textarea id="newContent" placeholder="记录灵感光芒..." style="height: 100px;"></textarea>
+        <div class="btn-group">
+            <button class="btn-submit" onclick="submitData()">记录</button>
+            <button class="btn-close" onclick="closeModals()">取消</button>
+        </div>
+    </div>
 
-    const size=6+Math.log(s.content.length+1)*2;
-
-    Object.assign(el.style,{
-        width:size+'px',
-        height:size+'px',
-        left:s.x+'px',
-        top:s.y+'px',
-        background:data[cat].color,
-        boxShadow:`0 0 ${size*3}px ${data[cat].color}`
-    });
-
-    el.onclick=()=>{
-        if(confirm(s.content+"\n\n删除？")){
-            deleteStar(cat,i);
+    <script>
+        // 注册 PWA Service Worker (断网离线支持)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('真·App模式启动成功', reg);
+                }).catch(err => console.log('App注册失败', err));
+            });
         }
-    };
 
-    sky.appendChild(el);
-    return el;
-}
+        let universeData = {};
+        let starElements = {};
+        let isSimulating = false;
+        let isTimelineMode = false;
 
-function init(){
-    for(const cat in data){
-        els[cat]=[];
-        data[cat].stars.forEach((s,i)=>{
-            els[cat].push(createStar(cat,s,i));
-        });
-    }
-}
-
-function add(){
-    const catVal=cat.value.trim();
-    const con=content.value.trim();
-    if(!catVal||!con) return;
-
-    if(!data[catVal]){
-        data[catVal]={
-            centroid:{
-                x:Math.random()*innerWidth,
-                y:Math.random()*innerHeight
-            },
-            color:`hsl(${Math.random()*360},70%,70%)`,
-            stars:[]
+        window.onload = () => {
+            const saved = localStorage.getItem('myStarryUniverse');
+            if (saved) universeData = JSON.parse(saved);
+            initUniverse();
+            setTimeout(() => { isSimulating = true; simulationLoop(); }, 500); 
         };
-    }
 
-    const d=data[catVal];
+        function initUniverse() {
+            const sky = document.getElementById('sky');
+            sky.innerHTML = '';
+            starElements = {};
+            for (const cat in universeData) {
+                starElements[cat] = [];
+                universeData[cat].stars.forEach((s, i) => {
+                    const el = document.createElement('div');
+                    el.className = 'star';
+                    const size = 5 + Math.min(s.content.length / 5, 10);
+                    Object.assign(el.style, {
+                        width: size + 'px', height: size + 'px',
+                        backgroundColor: universeData[cat].color,
+                        boxShadow: `0 0 ${size*3}px ${universeData[cat].color}`,
+                        left: (s.x || window.innerWidth/2) + 'px',
+                        top: (s.y || window.innerHeight/2) + 'px'
+                    });
+                    el.style.setProperty('--speed', (2 + Math.random()*2) + 's');
+                    el.style.setProperty('--delay', Math.random() + 's');
+                    sky.appendChild(el);
+                    starElements[cat][i] = el;
+                });
+            }
+        }
 
-    const s={
-        x:d.centroid.x+(Math.random()-0.5)*40,
-        y:d.centroid.y+(Math.random()-0.5)*40,
-        vx:(Math.random()-0.5)*1.5,
-        vy:(Math.random()-0.5)*1.5,
-        content:con,
-        time:Date.now()
-    };
+        function toggleView() {
+            isTimelineMode = !isTimelineMode;
+            const sky = document.getElementById('sky');
+            const timeline = document.getElementById('timelineView');
+            const btn = document.getElementById('toggleBtn');
 
-    d.stars.push(s);
+            if(isTimelineMode) {
+                sky.style.opacity = '0';
+                setTimeout(() => sky.style.display = 'none', 500);
+                timeline.style.display = 'block';
+                btn.innerText = '🌌 观星模式';
+                renderTimeline();
+            } else {
+                sky.style.display = 'block';
+                setTimeout(() => sky.style.opacity = '1', 10);
+                timeline.style.display = 'none';
+                btn.innerText = '🧭 时间轴';
+            }
+        }
 
-    if(!els[catVal]) els[catVal]=[];
-    els[catVal].push(createStar(catVal,s,d.stars.length-1));
+        function renderTimeline() {
+            const container = document.getElementById('timelineContainer');
+            container.innerHTML = '';
+            let allStars = [];
+            
+            // 将所有领域的星星汇聚到一个数组中
+            for(const cat in universeData) {
+                universeData[cat].stars.forEach(s => {
+                    allStars.push({...s, category: cat, color: universeData[cat].color});
+                });
+            }
+            
+            // 按时间倒序排序 (最新的在上面)
+            allStars.sort((a, b) => b.id - a.id);
 
-    save();
-}
-
-function deleteStar(cat,i){
-    data[cat].stars.splice(i,1);
-    els[cat][i].remove();
-    els[cat].splice(i,1);
-
-    if(data[cat].stars.length===0){
-        delete data[cat];
-        delete els[cat];
-    }
-
-    save();
-}
-
-function loop(){
-    if(!running) return;
-
-    const friction=0.97;
-    const gravity=0.0015;
-
-    for(const cat in data){
-        const d=data[cat];
-
-        d.stars.forEach((s,i)=>{
-            const dx=d.centroid.x-s.x;
-            const dy=d.centroid.y-s.y;
-
-            s.vx+=dx*gravity;
-            s.vy+=dy*gravity;
-
-            s.vx*=friction;
-            s.vy*=friction;
-
-            s.x+=s.vx;
-            s.y+=s.vy;
-
-            if(s.x<0||s.x>innerWidth){
-                s.vx*=-0.7;
+            if(allStars.length === 0) {
+                container.innerHTML = '<p style="color:#666; text-align:center;">宇宙空空如也，快去记录第一条感悟吧。</p>';
+                return;
             }
 
-            if(s.y<0||s.y>innerHeight){
-                s.vy*=-0.7;
+            allStars.forEach(s => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                item.style.setProperty('--dot-color', s.color);
+                item.innerHTML = `
+                    <div class="timeline-date">${s.date}</div>
+                    <div class="timeline-cat" style="color:${s.color}">${s.category}</div>
+                    <div class="timeline-content">${s.content}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function openModal(id) {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById(id).style.display = 'block';
+        }
+
+        function closeModals() {
+            document.getElementById('overlay').style.display = 'none';
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        }
+
+        function submitData() {
+            const cat = document.getElementById('newCategory').value.trim();
+            const con = document.getElementById('newContent').value.trim();
+            if(!cat || !con) return alert("请填写领域和内容");
+            
+            if(!universeData[cat]) {
+                universeData[cat] = { centroid: {x: window.innerWidth/2, y: window.innerHeight/2}, color: `hsl(${Math.random()*360},70%,75%)`, stars: [] };
             }
+            
+            const s = { 
+                x: universeData[cat].centroid.x, y: universeData[cat].centroid.y, 
+                vx: 0, vy: 0, content: con, date: new Date().toLocaleString('zh-CN', {hour12:false}), id: Date.now() 
+            };
+            universeData[cat].stars.push(s);
+            localStorage.setItem('myStarryUniverse', JSON.stringify(universeData));
+            
+            document.getElementById('newCategory').value = '';
+            document.getElementById('newContent').value = '';
+            closeModals();
+            initUniverse();
+            if(isTimelineMode) renderTimeline();
+        }
 
-            const el=els[cat][i];
-            if(el){
-                el.style.left=s.x+'px';
-                el.style.top=s.y+'px';
+        function simulationLoop() {
+            if(!isSimulating || isTimelineMode) return requestAnimationFrame(simulationLoop);
+            const friction = 0.94, gravity = 0.004, maxSpeed = 3;
+
+            for (const cat in universeData) {
+                const d = universeData[cat];
+                d.stars.forEach((s, i) => {
+                    const dx = d.centroid.x - s.x;
+                    const dy = d.centroid.y - s.y;
+                    s.vx = (s.vx + dx * gravity) * friction;
+                    s.vy = (s.vy + dy * gravity) * friction;
+                    s.vx = Math.max(-maxSpeed, Math.min(maxSpeed, s.vx));
+                    s.vy = Math.max(-maxSpeed, Math.min(maxSpeed, s.vy));
+                    s.x += s.vx; s.y += s.vy;
+                    if (s.x < 0 || s.x > window.innerWidth) { s.x = d.centroid.x; s.vx = 0; }
+                    if (s.y < 0 || s.y > window.innerHeight) { s.y = d.centroid.y; s.vy = 0; }
+
+                    const el = starElements[cat] ? starElements[cat][i] : null;
+                    if(el) { el.style.left = s.x + 'px'; el.style.top = s.y + 'px'; }
+                });
             }
-        });
-    }
-
-    requestAnimationFrame(loop);
-}
-
-function search(){
-    const q=search.value.toLowerCase();
-    results.innerHTML='';
-
-    let all=[];
-
-    for(const cat in data){
-        data[cat].stars.forEach(s=>{
-            if(s.content.toLowerCase().includes(q)){
-                all.push({...s,cat});
-            }
-        });
-    }
-
-    all.sort((a,b)=>b.time-a.time);
-
-    all.slice(0,20).forEach(s=>{
-        const div=document.createElement('div');
-        div.innerText = `[${s.cat}] ` + s.content;
-        results.appendChild(div);
-    });
-}
-
-init();
-loop();
-</script>
-
+            requestAnimationFrame(simulationLoop);
+        }
+    </script>
 </body>
 </html>
